@@ -70,7 +70,7 @@ void network_backpropagate(Network *net, Matrix *input, Matrix *output, Matrix *
     // backpropagate to get nabla_b and nabla_w
 
     /*
-     * calcualte last layer error 
+     * calcualte last layer error
      * delta = (a - y) * sigmoid_prime(z)
      */
 
@@ -83,27 +83,26 @@ void network_backpropagate(Network *net, Matrix *input, Matrix *output, Matrix *
     // delta = delta * temp
     matrix_elemwise_mult(delta, temp, delta);
 
-
     // nabla_b[last layer] = delta
+    matrix_copy(delta, (*nabla_b)[net->num_layers - 1]);
 
-    // nabla_w[last layer] = delta * activations[last layer - 1].transpose
+    // nabla_w[last layer] = delta @ activations[last layer - 1].transpose
+    matrix_multiply(delta, activations[net->num_layers - 2], (*nabla_w)[net->num_layers - 1]);
 
     matrix_free(delta);
     matrix_free(temp);
 
-
-    for (int i = net->num_layers-1; i > 0; i++) {
+    /*
+     * backpropagate the error to previous layers
+     */
+    for (int i = net->num_layers - 1; i > 0; i++) {
         Matrix *z = zs[i];
         Matrix *delta = matrix_create(net->sizes[i], 1);
         cost_derivative(activations[i], output, delta);
 
         Matrix *temp = matrix_create(net->sizes[i], 1);
-        matrix_elemwise_action(sigmoid_prime, z, temp);    
-
-
+        matrix_elemwise_action(sigmoid_prime, z, temp);
     }
-
-
 
     // update weights and biases
 
